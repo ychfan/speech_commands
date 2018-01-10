@@ -140,12 +140,12 @@ def make_model_fn(model_fn, num_gpus=None):
           train_op = opt.minimize(loss, global_step=global_step)
       else:
         train_op = None
-
+    """
     if mode == tf.estimator.ModeKeys.TRAIN:
       opts = tf.profiler.ProfileOptionBuilder().trainable_variables_parameter()
       stats = tf.profiler.profile(tf.get_default_graph(), options=opts)
       print("Total parameters:", stats.total_parameters)
-
+    """
     return tf.estimator.EstimatorSpec(
       mode=mode,
       predictions=predictions,
