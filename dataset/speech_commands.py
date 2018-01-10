@@ -18,6 +18,8 @@ TRAIN_DIR = "data/train/"
 TRAIN_AUDIO_DIR = TRAIN_DIR + "audio/"
 VAL_LIST_FILE = "validation_list.txt"
 TEST_LIST_FILE = "testing_list.txt"
+TEST_DIR = "data/test/"
+TEST_AUDIO_DIR = TEST_DIR + "audio/"
 
 AUDIO_SIZE = 16000
 NUM_CLASSES = 12
@@ -62,6 +64,7 @@ WORD_LABELS = np.zeros([len(DICT.keys()), 1], np.int32)
 PHONE_LABELS = np.zeros([len(DICT.keys()), len(PHONES)], np.int32)
 TRAIN_LIST = []
 VAL_LIST = []
+TEST_LIST = []
 
 
 def get_params():
@@ -89,6 +92,7 @@ def prepare():
 
   TRAIN_LIST[:] = []
   VAL_LIST[:] = []
+  TEST_LIST[:] = []
   with open(TRAIN_DIR + VAL_LIST_FILE) as f:
     VAL_LIST.extend(f.read().splitlines())
   for word in TRAIN_WORDS:
@@ -101,20 +105,30 @@ def prepare():
           for i in range(100):
             TRAIN_LIST.append(filepath)
   random.shuffle(TRAIN_LIST)
+  for file in os.listdir(TEST_AUDIO_DIR):
+    if file.endswith(".wav"):
+      TEST_LIST.append(file)
+  TEST_LIST.sort()
 
 
 def read(mode):
   """Create an instance of the dataset object."""
   file_list = {
       tf.estimator.ModeKeys.TRAIN: TRAIN_LIST,
-      tf.estimator.ModeKeys.EVAL: VAL_LIST
+      tf.estimator.ModeKeys.EVAL: VAL_LIST,
+      tf.estimator.ModeKeys.PREDICT: TEST_LIST
   }[mode]
 
   def gen():
-    for filepath in file_list:
-      word = filepath.split("/", 1)[0]
-      idx = TRAIN_WORDS.index(word)
-      rate, sig = wavfile.read(TRAIN_AUDIO_DIR + filepath)
+    for file in file_list:
+      if mode == tf.estimator.ModeKeys.PREDICT:
+        idx = 0
+        filepath = TEST_AUDIO_DIR + file
+      else:
+        word = file.split("/", 1)[0]
+        idx = TRAIN_WORDS.index(word)
+        filepath = TRAIN_AUDIO_DIR + file
+      rate, sig = wavfile.read(filepath)
       if len(sig) < AUDIO_SIZE:
         # print(len(sig))
         sig_pad = np.zeros(AUDIO_SIZE)

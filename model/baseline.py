@@ -41,8 +41,9 @@ def model(features, labels, mode, params):
   log_mel_spectrograms = tf.log(mel_spectrograms + 1e-6)
   audios = log_mel_spectrograms
   """
-  word_labels = labels["word_label"]
-  phone_labels = labels["phone_label"]
+  if mode != tf.estimator.ModeKeys.PREDICT:
+    word_labels = labels["word_label"]
+    phone_labels = labels["phone_label"]
 
   training = mode == tf.estimator.ModeKeys.TRAIN
   drop_rate = params.drop_rate if training else 0.0
@@ -51,10 +52,10 @@ def model(features, labels, mode, params):
 
   x = tf.layers.conv1d(x, 32, 3, activation=tf.nn.relu,
                        kernel_regularizer=tf.contrib.layers.l2_regularizer(params.weight_decay))
-  #x = tf.layers.max_pooling1d(x, 5, 5)
+  x = tf.layers.max_pooling1d(x, 5, 5)
   x = tf.layers.conv1d(x, 32, 3, activation=tf.nn.relu,
                        kernel_regularizer=tf.contrib.layers.l2_regularizer(params.weight_decay))
-  #x = tf.layers.max_pooling1d(x, 5, 5)
+  x = tf.layers.max_pooling1d(x, 5, 5)
   x = tf.layers.flatten(x)
   phone_logits = tf.layers.dense(x, params.num_phones,
                                  kernel_regularizer=tf.contrib.layers.l2_regularizer(params.weight_decay))
@@ -62,6 +63,8 @@ def model(features, labels, mode, params):
                                 kernel_regularizer=tf.contrib.layers.l2_regularizer(params.weight_decay))
 
   predictions = tf.argmax(word_logits, axis=-1)
+  if mode == tf.estimator.ModeKeys.PREDICT:
+    return {"predictions": predictions}, None, None    
 
   loss = tf.losses.hinge_loss(labels=phone_labels, logits=phone_logits) + \
       tf.losses.sparse_softmax_cross_entropy(

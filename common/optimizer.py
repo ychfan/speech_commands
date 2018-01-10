@@ -126,20 +126,24 @@ def make_model_fn(model_fn, num_gpus=None):
         loss = tf.add_n(losses) if losses else None
     else:
       predictions, loss, eval_metrics = model_fn(features, labels, mode, params)
-      tf.summary.scalar("loss/main", loss)
-
-      update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-
-      reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-      tf.summary.scalar("loss/regularization", tf.add_n(reg_losses))
-
-      loss = tf.add_n([loss] + reg_losses)
-
-      if mode == tf.estimator.ModeKeys.TRAIN:
-        with tf.control_dependencies(update_ops):
-          train_op = opt.minimize(loss, global_step=global_step)
-      else:
+      if mode == tf.estimator.ModeKeys.PREDICT:
+        loss = None
         train_op = None
+      else:
+        tf.summary.scalar("loss/main", loss)
+
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+
+        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        tf.summary.scalar("loss/regularization", tf.add_n(reg_losses))
+
+        loss = tf.add_n([loss] + reg_losses)
+
+        if mode == tf.estimator.ModeKeys.TRAIN:
+          with tf.control_dependencies(update_ops):
+            train_op = opt.minimize(loss, global_step=global_step)
+        else:
+          train_op = None
     """
     if mode == tf.estimator.ModeKeys.TRAIN:
       opts = tf.profiler.ProfileOptionBuilder().trainable_variables_parameter()
