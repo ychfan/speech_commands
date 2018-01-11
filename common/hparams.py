@@ -10,11 +10,11 @@ DEFAULT_PARAMS = {
   "optimizer": "Adam",
   "learning_rate": 0.001,
   "momentum": 0.9,
-  "warmup_steps": 100,
-  "constant_steps": 20000,
-  "decay_steps": 20000,
-  "decay_rate": 0.1,
-  "batch_size": 128,
+  "warmup_steps": 1000,
+  "constant_steps": 200000,
+  "decay_steps": 200000,
+  "decay_rate": 0.6,
+  "batch_size": 1024,
 }
 
 
