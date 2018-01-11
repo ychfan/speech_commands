@@ -23,6 +23,7 @@ TEST_AUDIO_DIR = TEST_DIR + "audio/"
 
 AUDIO_SIZE = 16000
 NUM_CLASSES = 12
+NUM_CHANNELS = 40
 WORDS = ["yes", "no", "up", "down", "left", "right",
          "on", "off", "stop", "go", "silence", "unknown"]
 DICT = {
@@ -138,11 +139,11 @@ def read(mode):
       elif len(sig) > AUDIO_SIZE:
         offset = random.randrange(len(sig) - AUDIO_SIZE)
         sig = sig[offset:offset + AUDIO_SIZE]
-      fbank_feat = logfbank(sig, rate)
+      fbank_feat = logfbank(sig, rate, nfilt=NUM_CHANNELS)
       yield (fbank_feat, WORD_LABELS[idx], PHONE_LABELS[idx])
 
   return tf.contrib.data.Dataset.from_generator(
-      gen, (tf.float32, tf.int32, tf.int32), ([99, 26], [1, ], [len(PHONES), ])
+      gen, (tf.float32, tf.int32, tf.int32), ([99, NUM_CHANNELS], [1, ], [len(PHONES), ])
   )
 
 
