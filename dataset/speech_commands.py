@@ -171,9 +171,8 @@ def parse(mode, audio, word_label, phone_label):
       ratio = random.uniform(0, 0.6)
       ratio = 0
       audio = audio + np.rint(ratio * noise)
-    audio = logfbank(audio, AUDIO_SIZE, nfilt=NUM_CHANNELS)
     return audio
-  audio = tf.py_func(extract, [mode, audio], tf.float64, stateful=False)
-  audio = tf.reshape(audio, [99, NUM_CHANNELS])
+  audio = tf.py_func(extract, [mode, audio], tf.int16, stateful=False)
+  audio = tf.reshape(audio, [AUDIO_SIZE, ])
   audio = tf.to_float(audio)
   return {"audio": audio}, {"word_label": word_label, "phone_label": phone_label}
