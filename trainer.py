@@ -20,10 +20,11 @@ from common import metrics
 import dataset.speech_commands
 
 import model.baseline
+import model.resnet
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-tf.flags.DEFINE_string("model", "baseline", "Model name.")
+tf.flags.DEFINE_string("model", "resnet", "Model name.")
 tf.flags.DEFINE_string("dataset", "speech", "Dataset name.")
 tf.flags.DEFINE_string("output_dir", "", "Optional output dir.")
 tf.flags.DEFINE_string("schedule", "train_and_evaluate", "Schedule.")
@@ -40,6 +41,7 @@ FLAGS = tf.flags.FLAGS
 
 MODELS = {
     "baseline": model.baseline,
+    "resnet": model.resnet,
 }
 
 DATASETS = {
