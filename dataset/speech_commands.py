@@ -66,6 +66,8 @@ PHONE_LABELS = np.zeros([len(DICT.keys()), len(PHONES)], np.int32)
 TRAIN_LIST = []
 VAL_LIST = []
 TEST_LIST = []
+BGN_LIST = []
+BGN = []
 
 
 def get_params():
@@ -94,6 +96,7 @@ def prepare():
   TRAIN_LIST[:] = []
   VAL_LIST[:] = []
   TEST_LIST[:] = []
+  BGN_LIST[:] = []
   with open(TRAIN_DIR + VAL_LIST_FILE) as f:
     VAL_LIST.extend(f.read().splitlines())
   for word in TRAIN_WORDS:
@@ -103,6 +106,7 @@ def prepare():
         if filepath not in VAL_LIST:
           TRAIN_LIST.append(filepath)
         if word == "_background_noise_":
+          BGN_LIST.append(filepath)
           for i in range(100):
             TRAIN_LIST.append(filepath)
   random.shuffle(TRAIN_LIST)
@@ -110,6 +114,11 @@ def prepare():
     if file.endswith(".wav"):
       TEST_LIST.append(file)
   TEST_LIST.sort()
+  BGN[:] = []
+  for file in BGN_LIST:
+    filepath = TRAIN_AUDIO_DIR + file
+    _, sig = wavfile.read(filepath)
+    BGN.append(sig)
 
 
 def read(mode):
@@ -120,6 +129,10 @@ def read(mode):
       tf.estimator.ModeKeys.PREDICT: TEST_LIST
   }[mode]
 
+  def cut_random(sig):
+    offset = random.randrange(len(sig) - AUDIO_SIZE)
+    return sig[offset:offset + AUDIO_SIZE]
+
   def gen():
     for file in file_list:
       if mode == tf.estimator.ModeKeys.PREDICT:
@@ -129,27 +142,38 @@ def read(mode):
         word = file.split("/", 1)[0]
         idx = TRAIN_WORDS.index(word)
         filepath = TRAIN_AUDIO_DIR + file
-      rate, sig = wavfile.read(filepath)
+      _, sig = wavfile.read(filepath)
       if len(sig) < AUDIO_SIZE:
         # print(len(sig))
-        sig_pad = np.zeros(AUDIO_SIZE)
+        sig_pad = np.zeros(AUDIO_SIZE, dtype=np.int16)
         offset = (AUDIO_SIZE - len(sig)) // 2
         sig_pad[offset:offset + len(sig)] = sig
         sig = sig_pad
       elif len(sig) > AUDIO_SIZE:
-        offset = random.randrange(len(sig) - AUDIO_SIZE)
-        sig = sig[offset:offset + AUDIO_SIZE]
-      fbank_feat = logfbank(sig, rate, nfilt=NUM_CHANNELS)
-      yield (fbank_feat, WORD_LABELS[idx], PHONE_LABELS[idx])
+        sig = cut_random(sig)
+      yield (sig, WORD_LABELS[idx], PHONE_LABELS[idx])
 
   return tf.contrib.data.Dataset.from_generator(
-      gen, (tf.float32, tf.int32, tf.int32), ([99, NUM_CHANNELS], [1, ], [len(PHONES), ])
+      gen, (tf.int16, tf.int32, tf.int32), ([
+          AUDIO_SIZE, ], [1, ], [len(PHONES), ])
   )
 
 
 def parse(mode, audio, word_label, phone_label):
   """Parse input record to features and labels."""
+  def extract(mode, audio):
+    if mode == tf.estimator.ModeKeys.TRAIN:
+      # time shift
+      shift = random.randint(-1000, 1000)
+      audio = np.roll(audio, shift)
+      # noise
+      noise = cut_random(random.choice(BGN))
+      ratio = random.uniform(0, 0.6)
+      ratio = 0
+      audio = audio + np.rint(ratio * noise)
+    audio = logfbank(audio, AUDIO_SIZE, nfilt=NUM_CHANNELS)
+    return audio
+  audio = tf.py_func(extract, [mode, audio], tf.float64, stateful=False)
+  audio = tf.reshape(audio, [99, NUM_CHANNELS])
   audio = tf.to_float(audio)
-  word_label = tf.to_int32(word_label)
-  phone_label = tf.to_int32(phone_label)
   return {"audio": audio}, {"word_label": word_label, "phone_label": phone_label}
