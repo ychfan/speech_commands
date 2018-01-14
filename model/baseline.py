@@ -24,7 +24,6 @@ def get_params():
 def model(features, labels, mode, params):
   """CNN classifier model."""
   audios = features["audio"]
-  """
   sample_rate = 16000.0
   stfts = tf.contrib.signal.stft(audios, frame_length=400, frame_step=160,
                                  fft_length=1024)
@@ -40,7 +39,7 @@ def model(features, labels, mode, params):
       linear_to_mel_weight_matrix.shape[-1:]))
   log_mel_spectrograms = tf.log(mel_spectrograms + 1e-6)
   audios = log_mel_spectrograms
-  """
+
   if mode != tf.estimator.ModeKeys.PREDICT:
     word_labels = labels["word_label"]
     phone_labels = labels["phone_label"]
