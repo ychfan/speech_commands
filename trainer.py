@@ -21,6 +21,7 @@ import dataset.speech_commands
 
 import model.baseline
 import model.resnet
+import model.densenet
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -42,6 +43,7 @@ FLAGS = tf.flags.FLAGS
 MODELS = {
     "baseline": model.baseline,
     "resnet": model.resnet,
+    "densenet": model.densenet,
 }
 
 DATASETS = {

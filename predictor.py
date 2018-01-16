@@ -20,13 +20,15 @@ from common import metrics
 import dataset.speech_commands
 
 import model.baseline
+import model.resnet
+import model.densenet
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-tf.flags.DEFINE_string("model", "baseline", "Model name.")
+tf.flags.DEFINE_string("model", "densenet", "Model name.")
 tf.flags.DEFINE_string("dataset", "speech", "Dataset name.")
 tf.flags.DEFINE_string(
-    "output_dir", "output/speech/baseline/2", "Optional output dir.")
+    "output_dir", "", "Optional output dir.")
 tf.flags.DEFINE_string("schedule", "train_and_evaluate", "Schedule.")
 tf.flags.DEFINE_string("hparams", "", "Hyper parameters.")
 tf.flags.DEFINE_integer("num_epochs", None, "Number of training epochs.")
@@ -41,6 +43,8 @@ FLAGS = tf.flags.FLAGS
 
 MODELS = {
     "baseline": model.baseline,
+    "resnet": model.resnet,
+    "densenet": model.densenet,
 }
 
 DATASETS = {
